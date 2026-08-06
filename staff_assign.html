@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>BOAT Staff Assignment — HKL Emergency Department</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg:            #101109;
+    --card:          #17190f;
+    --row-alt:       #1c1f13;
+    --hairline:      rgba(245,166,35,0.16);
+    --ink-primary:   #f3ead9;
+    --ink-secondary: #a39c86;
+    --ink-muted:     #6d6858;
+    --amber:         #f5a623;
+    --amber-dim:     rgba(245,166,35,0.14);
+    --good:          #4caf50;
+    --good-dim:      rgba(76,175,80,0.14);
+    --mono: "Courier New", ui-monospace, "SFMono-Regular", Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink-primary);
+    font-family: var(--sans); padding: 32px 40px 60px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.2em;
+    color: var(--ink-muted); text-transform: uppercase;
+  }
+  h1 { font-size: 26px; margin: 6px 0 4px; color: var(--amber); letter-spacing: 0.02em; }
+  .subhead { font-size: 13px; color: var(--ink-secondary); margin-bottom: 24px; }
+  .subhead code { font-family: var(--mono); background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 4px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--hairline); border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted);
+    padding: 14px 16px; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--hairline); font-size: 14px; vertical-align: middle; }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr.critical td:first-child { box-shadow: inset 4px 0 0 #ff5a4e; }
+
+  td.name { font-weight: 700; font-size: 15px; }
+  td.zone, td.ward { color: var(--ink-secondary); font-family: var(--mono); font-size: 13px; }
+  td.duration { font-family: var(--mono); color: var(--amber); font-weight: 700; }
+
+  .staff-row { display: flex; gap: 8px; align-items: center; }
+  input.staff-input {
+    flex: 1; background: #0d0e08; border: 1px solid var(--hairline); border-radius: 6px;
+    color: var(--ink-primary); font-family: var(--sans); font-size: 14px;
+    padding: 8px 10px; min-width: 140px;
+  }
+  input.staff-input:focus { outline: none; border-color: var(--amber); }
+  button.save-btn {
+    background: var(--amber-dim); border: 1px solid var(--amber); color: var(--amber);
+    font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    white-space: nowrap;
+  }
+  button.save-btn:hover { background: rgba(245,166,35,0.24); }
+  button.save-btn:disabled { opacity: 0.5; cursor: default; }
+  .saved-flash {
+    font-family: var(--mono); font-size: 11px; color: var(--good); letter-spacing: 0.06em;
+    text-transform: uppercase; opacity: 0; transition: opacity 0.3s;
+  }
+  .saved-flash.show { opacity: 1; }
+
+  .empty-state, .loading-state {
+    padding: 50px; text-align: center; color: var(--ink-muted);
+    font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; font-size: 13px;
+  }
+  .error-banner {
+    display: none; background: rgba(255,90,78,0.14); color: #ff5a4e;
+    font-family: var(--mono); font-size: 12px; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px;
+  }
+  .error-banner.show { display: block; }
+
+  .footer-note {
+    margin-top: 20px; font-size: 12px; color: var(--ink-muted); line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">HKL &middot; Emergency Department &middot; Backend</div>
+    <h1>BOAT Staff Assignment</h1>
+    <div class="subhead">Assign the staff member incharge of each current BOAT patient. Saved here shows live on the <code>boat_board.html</code> status board.</div>
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient Name</th>
+            <th>ED Zone</th>
+            <th>Ward</th>
+            <th>Boat Duration</th>
+            <th>Staff Incharge</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="6" class="loading-state">Loading current BOAT list&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer-note">
+      List refreshes automatically every 30 seconds. If you're mid-edit on a row, that row won't be overwritten by the refresh until you save or move away.
+    </div>
+  </div>
+
+<script>
+(function () {
+  var WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4cd9upC8AAHM64zDLptE6sdCdGrf2ZlvoymFXJxiYxDuXW_yUjHCmMJs-qO0UsHZ4/exec"; // same /exec URL as boat_pull.py's WEBAPP_URL
+  var SECRET_KEY = "MEjiHyP0leEnfAqyMvvj6cN3KU2TuZ"; // must match SECRET_KEY in the Apps Script
+  var REFRESH_MS = 30000;
+
+  var tbody = document.getElementById("tableBody");
+  var errorEl = document.getElementById("errorBanner");
+  var editingNames = {}; // name -> true while an input is focused
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function durationHours(str) {
+    if (!str) return 0;
+    var d = /(\d+)\s*day/.exec(str), h = /(\d+)\s*hour/.exec(str);
+    return (d ? parseInt(d[1], 10) : 0) * 24 + (h ? parseInt(h[1], 10) : 0);
+  }
+
+  function render(patients) {
+    if (patients.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No BOAT patients currently recorded</td></tr>';
+      return;
+    }
+
+    patients.sort(function (a, b) { return durationHours(b.boat_duration_in_ed) - durationHours(a.boat_duration_in_ed); });
+
+    tbody.innerHTML = "";
+    patients.forEach(function (p) {
+      if (editingNames[p.name]) return; // don't clobber a row being edited
+      var tr = document.createElement("tr");
+      if (durationHours(p.boat_duration_in_ed) > 60) tr.className = "critical";
+      tr.innerHTML =
+        '<td class="name">' + escapeHtml(p.name) + '</td>' +
+        '<td class="zone">' + escapeHtml(p.ed_zone) + '</td>' +
+        '<td class="ward">' + escapeHtml(p.assigned_ward) + '</td>' +
+        '<td class="duration">' + escapeHtml(p.boat_duration_in_ed) + '</td>' +
+        '<td>' +
+          '<div class="staff-row">' +
+            '<input class="staff-input" type="text" value="' + escapeHtml(p.staff_incharge) + '" placeholder="Staff name" />' +
+            '<button class="save-btn">Save</button>' +
+            '<span class="saved-flash">Saved</span>' +
+          '</div>' +
+        '</td>';
+
+      var input = tr.querySelector(".staff-input");
+      var btn = tr.querySelector(".save-btn");
+      var flash = tr.querySelector(".saved-flash");
+
+      input.addEventListener("focus", function () { editingNames[p.name] = true; });
+      input.addEventListener("blur", function () {
+        setTimeout(function () { delete editingNames[p.name]; }, 200); // allow click on Save first
+      });
+
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        saveAssignment(p.name, input.value.trim())
+          .then(function () {
+            btn.disabled = false;
+            delete editingNames[p.name];
+            flash.classList.add("show");
+            setTimeout(function () { flash.classList.remove("show"); }, 1500);
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            errorEl.textContent = "SAVE FAILED — " + err.message;
+            errorEl.classList.add("show");
+          });
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function saveAssignment(name, staffIncharge) {
+    return fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "assign_staff", key: SECRET_KEY, name: name, staff_incharge: staffIncharge })
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (data) {
+      if (data.status !== "ok") throw new Error(data.message || "unknown error");
+    });
+  }
+
+  function loadList() {
+    fetch(WEBAPP_URL + "?key=" + encodeURIComponent(SECRET_KEY), { method: "GET", cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        errorEl.classList.remove("show");
+        render(data.patients || []);
+      })
+      .catch(function (err) {
+        errorEl.textContent = "LOAD FAILED — " + err.message;
+        errorEl.classList.add("show");
+      });
+  }
+
+  if (WEBAPP_URL.indexOf("PASTE_") === 0) {
+    errorEl.textContent = "CONFIG NEEDED — set WEBAPP_URL at the top of the <script> block to your Apps Script /exec URL";
+    errorEl.classList.add("show");
+    tbody.innerHTML = "";
+  } else {
+    loadList();
+    setInterval(loadList, REFRESH_MS);
+  }
+})();
+</script>
+</body>
+</html>
