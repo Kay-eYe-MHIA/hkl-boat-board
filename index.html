@@ -219,7 +219,15 @@
   var PAGE_ROTATE_MS = 8000;
   var BOAT_ALERT_COUNT = 6; // watch the top N longest-waiting BOAT names for changes
 
+  // ---- ZONE FILTER (via ?zone=... in the URL) ----
+  var ZONE_FILTER = (new URLSearchParams(window.location.search).get("zone") || "").trim();
+
   document.getElementById("intervalLabel").textContent = Math.round(FETCH_INTERVAL_MS / 1000);
+
+  if (ZONE_FILTER) {
+    document.title = "BOAT Status Board — " + ZONE_FILTER;
+    document.querySelector(".title-block h1").textContent = "BOAT Status Board — " + ZONE_FILTER.toUpperCase();
+  }
 
   var boardEl = document.getElementById("board");
   var boardScrollEl = document.querySelector(".board-scroll");
@@ -291,7 +299,9 @@
     if (sortedList.length === 0) {
       var empty = document.createElement("div");
       empty.className = "empty-state";
-      empty.textContent = "No BOAT patients currently recorded";
+      empty.textContent = ZONE_FILTER
+        ? "No patients currently recorded for " + ZONE_FILTER.toUpperCase()
+        : "No BOAT patients currently recorded";
       boardEl.appendChild(empty);
       pageIndicatorEl.textContent = "";
       return;
@@ -401,10 +411,18 @@
     lastBoatAlertNames = currentNames;
   }
 
+  function matchesZoneFilter(zone) {
+    if (!ZONE_FILTER) return true;
+    if (!zone) return false;
+    return zone.toLowerCase().indexOf(ZONE_FILTER.toLowerCase()) !== -1;
+  }
+
   function applyFetch(rawPatients) {
     var now = Date.now();
     var newMap = {};
-    rawPatients.forEach(function (r) {
+    rawPatients
+      .filter(function (r) { return matchesZoneFilter(r.ed_zone); })
+      .forEach(function (r) {
       var seconds = parseDurationToSeconds(r.boat_duration_in_ed);
       newMap[r.name] = {
         name: r.name,
