@@ -217,7 +217,7 @@
       <div class="nba-line">NBA (NO BED AVAILABLE): <span id="nbaCount">&mdash;</span></div>
     </div>
   </header>
-
+  <div id="bedVacancyEl"></div>
   <div class="error-banner" id="errorBanner"></div>
 
   <div class="board-scroll">
@@ -581,7 +581,21 @@
       String(d.getMinutes()).padStart(2, "0") + ":" +
       String(d.getSeconds()).padStart(2, "0");
   }
-
+  function renderBedVacancy(beds) {
+  var el = document.getElementById("bedVacancyEl");
+  if (!el) return;
+  if (!beds || !beds.length) { el.innerHTML = "<div style='color:#8aa0b4;padding:8px'>No bed data yet</div>"; return; }
+  var html = "<div style='display:flex;gap:10px;flex-wrap:wrap;padding:10px;margin-top:6px;background:#0e1621;border-radius:8px;border:1px solid #2a3644;'>";
+  beds.forEach(function (b) {
+    var ok = (+b.vacant > 0);
+    html += "<div style='padding:6px 12px;background:#17202c;border-radius:6px;min-width:110px;'>" +
+            "<div style='font-size:11px;color:#8aa0b4;'>" + b.area + "</div>" +
+            "<div style='font-size:20px;font-weight:bold;color:" + (ok ? "#2ecc71" : "#e74c3c") + ";'>" +
+            b.vacant + " <span style='font-size:11px;color:#8aa0b4;'>/ " + b.capacity + "</span></div></div>";
+  });
+  html += "</div>";
+  el.innerHTML = html;
+  }
   function fetchData() {
     fetch(WEBAPP_URL + "?key=" + encodeURIComponent(SECRET_KEY), { method: "GET", cache: "no-store" })
       .then(function (r) {
@@ -590,6 +604,7 @@
       })
       .then(function (data) {
         applyFetch(data.patients || [], data.stats || {});
+        renderBedVacancy(data.bedVacancy || []);
         lastFetchOk = new Date();
         errorEl.classList.remove("show");
         syncLineEl.textContent = "live — synced " + lastFetchOk.toLocaleTimeString();
