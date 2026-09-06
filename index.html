@@ -584,14 +584,17 @@
   function renderBedVacancy(beds) {
   var el = document.getElementById("bedVacancyEl");
   if (!el) return;
-  if (!beds || !beds.length) { el.innerHTML = "<div style='color:#8aa0b4;padding:8px'>No bed data yet</div>"; return; }
-  var html = "<div style='display:flex;gap:10px;flex-wrap:wrap;padding:10px;margin-top:6px;background:#0e1621;border-radius:8px;border:1px solid #2a3644;'>";
+  if (!beds || !beds.length) { el.innerHTML = ""; return; }
+  var html = '<div style="text-align:center;font-size:22px;font-weight:800;letter-spacing:1px;color:#d6e2ee;margin:4px 0 2px;">BED VACANCY STATUS</div>';
+  html += "<div style='display:flex;justify-content:center;align-items:stretch;gap:20px;flex-wrap:wrap;padding:8px 0;margin:0 auto;width:100%;'>";
   beds.forEach(function (b) {
     var ok = (+b.vacant > 0);
-    html += "<div style='padding:6px 12px;background:#17202c;border-radius:6px;min-width:110px;'>" +
-            "<div style='font-size:11px;color:#8aa0b4;'>" + b.area + "</div>" +
-            "<div style='font-size:20px;font-weight:bold;color:" + (ok ? "#2ecc71" : "#e74c3c") + ";'>" +
-            b.vacant + " <span style='font-size:11px;color:#8aa0b4;'>/ " + b.capacity + "</span></div></div>";
+    html += "<div style='text-align:center;padding:16px 28px;background:#17202c;border-radius:12px;min-width:200px;border:1px solid #22303f;'>" +
+            "<div style='font-size:20px;font-weight:bold;color:#d6e2ee;text-transform:uppercase;letter-spacing:.5px;'>" + b.area + "</div>" +
+            "<div style='font-size:14px;letter-spacing:3px;font-weight:700;margin-top:8px;color:" + (ok ? "#2ecc71" : "#e74c3c") + ";'>" + (ok ? "VACANT" : "FULL") + "</div>" +
+            "<div style='font-size:60px;font-weight:800;line-height:1.05;color:" + (ok ? "#2ecc71" : "#e74c3c") + ";'>" + b.vacant + "</div>" +
+            "<div style='font-size:15px;color:#8aa0b4;'>of " + b.capacity + " beds</div>" +
+            "<div style='font-size:13px;color:#6b7f92;margin-top:4px;'>occupying " + b.occupied + "</div></div>";
   });
   html += "</div>";
   el.innerHTML = html;
