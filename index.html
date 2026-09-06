@@ -585,7 +585,8 @@
   var el = document.getElementById("bedVacancyEl");
   if (!el) return;
   if (!beds || !beds.length) { el.innerHTML = ""; return; }
-  var html = '<div style="text-align:center;font-size:22px;font-weight:800;letter-spacing:1px;color:#d6e2ee;margin:4px 0 2px;">BED VACANCY STATUS</div>';
+  var html = '<div style="text-align:center;font-size:22px;font-weight:800;letter-spacing:1px;color:#d6e2ee;margin:4px 0 0;">BED VACANCY STATUS</div>' +
+             '<div style="text-align:center;font-size:11px;color:#6b7f92;margin:0 0 6px;opacity:.65;">Data from Bedwatcher system &mdash; not capturing kiv discharge / short observation</div>';
   html += "<div style='display:flex;justify-content:center;align-items:stretch;gap:20px;flex-wrap:wrap;padding:8px 0;margin:0 auto;width:100%;'>";
   beds.forEach(function (b) {
     var ok = (+b.vacant > 0);
