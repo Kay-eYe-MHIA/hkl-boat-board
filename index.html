@@ -522,7 +522,8 @@
     marqueeTrackEl.style.animation = "marquee-scroll " + duration + "s linear infinite";
   }
 
-  function applyFetch(rawPatients, stats) {
+    function applyFetch(rawPatients, stats) {
+    rawPatients = (rawPatients || []).filter(function (r) { return r.patient_status === "BOAT"; });  // BOAT only
     var now = Date.now();
     var newMap = {};
     rawPatients
@@ -556,7 +557,6 @@
 
     checkBoatAlert();
   }
-
   function tick() {
     var now = Date.now();
     Object.keys(patients).forEach(function (k) {
