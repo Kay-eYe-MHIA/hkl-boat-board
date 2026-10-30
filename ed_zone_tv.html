@@ -1,0 +1,67 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>ED Zone TV</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0F172A;color:#fff;font:500 15px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+#bar{height:38px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#0F172A;border-bottom:1px solid #1E293B;font-size:14px}
+#dot{width:9px;height:9px;border-radius:50%;background:#34D399;flex:none}
+#name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#clock{margin-left:auto;color:#94A3B8;font-variant-numeric:tabular-nums}
+#stage{position:absolute;inset:38px 0 0 0}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.split #stage{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#1E293B}
+.split iframe{position:relative;inset:auto;width:100%;height:100%}
+#warn{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:40px;background:#0F172A;font-size:18px;line-height:1.6}
+</style></head><body>
+<div id="bar"><span id="dot"></span><span id="name">&nbsp;</span><span id="clock"></span></div>
+<div id="stage"><div id="warn"></div></div>
+<script>
+// Config: add or reorder as needed. The page rotates through them automatically.
+var BOARDS = [
+  { name: 'ED Live Status', url: 'https://script.google.com/macros/s/AKfycbzbGaolegBbNnMMnGe1Zc5oc4neUkrxyKkX8ecmbnuTiYXTi9NEp2jOAbyFg4XlE4RI/exec' },
+  { name: 'BOAT Board - Resus 2', url: 'https://kay-eye-mhia.github.io/hkl-boat-board/?zone=Resus%202' }
+];
+var q = new URLSearchParams(location.search);
+var DWELL = (parseInt(q.get('dwell') || '60', 10) || 60) * 1000;   // seconds each
+var MODE  = (q.get('mode') || 'rotate');                             // rotate | split
+var stage = document.getElementById('stage');
+var nameEl = document.getElementById('name');
+
+function tick() {
+  var d = new Date();
+  document.getElementById('clock').textContent =
+    d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) + '  ·  ' +
+    d.toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+}
+tick(); setInterval(tick, 15000);
+
+function rel(src) {
+  var f = document.createElement('iframe');
+  f.src = src;
+  f.setAttribute('referrerpolicy', 'no-referrer');
+  f.allow = 'fullscreen';
+  return f;
+}
+function showErr(msg) {
+  var w = document.getElementById('warn');
+  w.style.display = 'grid';
+  w.innerHTML = msg;
+}
+
+if (MODE === 'split') {
+  document.body.classList.add('split');
+  nameEl.textContent = BOARDS.map(function (b) { return b.name; }).join('  ·  ');
+  BOARDS.forEach(function (b) { stage.appendChild(rel(b.url)); });
+} else {
+  var i = 0;
+  var current = null;
+  function next() {
+    var b = BOARDS[i % BOARDS.length];
+    nameEl.textContent = b.name;
+    if (current) current.remove();
+    current = rel(b.url);
+    stage.appendChild(current);
+    i++;
+    setTimeout(next, DWELL);
+  }
+  next();
+}
+</script></body></html>
