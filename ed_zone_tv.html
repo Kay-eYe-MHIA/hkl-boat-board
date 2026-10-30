@@ -1,0 +1,56 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>ED Zone TV</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0F172A;color:#fff;font:500 15px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+#bar{height:38px;display:flex;align-items:center;gap:14px;padding:0 14px;background:#0F172A;border-bottom:1px solid #1E293B;font-size:14px}
+#dot{width:9px;height:9px;border-radius:50%;background:#34D399;flex:none}
+#name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#left{margin-left:auto;color:#94A3B8;font-variant-numeric:tabular-nums}
+#stage{position:absolute;inset:38px 0 0 0}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+</style></head><body>
+<div id="bar"><span id="dot"></span><span id="name">&nbsp;</span><span id="left"></span></div>
+<div id="stage"></div>
+<script>
+// dwell = seconds on screen for that board. Edit freely.
+var BOARDS = [
+  { name: 'ED Live Status (KVAS)', url: 'https://script.google.com/macros/s/AKfycbxO-BryUXJJy7qVHSxTFrF8Y_3fV3UjLSBbHkji5juuzA05O_AMKTBXVVuyJtu9qMR4zw/exec', dwell: 20 },
+  { name: 'BOAT Board - Resus 2',   url: 'https://kay-eye-mhia.github.io/hkl-boat-board/?zone=Resus%202', dwell: 60 }
+];
+var q = new URLSearchParams(location.search);
+var scale = parseFloat(q.get('dwell')) || 0;   // optional: ?dwell=2 doubles every time
+var stage = document.getElementById('stage'), nameEl = document.getElementById('name'), leftEl = document.getElementById('left');
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function clock() {
+  var d = new Date();
+  leftEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + '  ·  ' +
+                       d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+clock(); setInterval(clock, 15000);
+
+var i = 0, current = null, timer = null, secs = 0, countdown = null;
+function beep() { /* placeholder */ }
+function show() {
+  var b = BOARDS[i % BOARDS.length];
+  nameEl.textContent = b.name;
+  if (current) current.remove();
+  current = document.createElement('iframe');
+  current.src = b.url;
+  current.setAttribute('referrerpolicy', 'no-referrer');
+  current.allow = 'fullscreen';
+  stage.appendChild(current);
+
+  secs = scale ? Math.round(b.dwell * scale) : b.dwell;
+  if (countdown) clearInterval(countdown);
+  countdown = setInterval(function () {
+    secs--;
+    if (secs <= 0) { clearInterval(countdown); next(); }
+  }, 1000);
+}
+function next() {
+  i++;
+  if (timer) clearTimeout(timer);
+  show();
+}
+show();
+</script></body></html>
